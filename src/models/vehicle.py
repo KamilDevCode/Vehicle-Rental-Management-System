@@ -24,34 +24,32 @@ class Vehicle:
     color: str
     status: VehicleStatus
     daily_rate: float
-    type_of_vehicle: TypeOfVehicle
+    type_of_vehicle: TypeOfVehicle | str
 
     def get_details(self):
         return {
             "id": self.vehicle_id,
-            "type": self.type_of_vehicle.value,
+            "type": self.type_of_vehicle,
             "model": self.model,
             "year": self.year,
             "color": self.color,
-            "status": self.status.value,
+            "status": self.status,
             "daily_rate": self.daily_rate,
         }
 
     def __str__(self):
         return f"{self.get_details()}"
 
+    # @classmethod
+    # def get_all_vehicles(cls):
+    #     return [
+    #         cls.get_vehicle_by_id(1),
+    #         cls.get_vehicle_by_id(2),
+    #         cls.get_vehicle_by_id(3),
+    #     ]
 
-vehicle = Vehicle(
-    vehicle_id=1,
-    max_speed=200,
-    model="BMW",
-    year=2020,
-    status=VehicleStatus.RESERVED,
-    color="red",
-    daily_rate=100.0,
-    type_of_vehicle=TypeOfVehicle.CAR,
-)
-print(vehicle)
+    def update_status(self, new_status: VehicleStatus):
+        self.status = new_status
 
 
 @dataclass
@@ -59,22 +57,7 @@ class Motorbike(Vehicle):
     engine_capacity: int
 
     def __str__(self):
-        return f"{super().__str__()} -Engine capacity: {self.engine_capacity}cc"
-
-
-motorbike = Motorbike(
-    vehicle_id=2,
-    max_speed=180,
-    model="Yamaha",
-    year=2021,
-    color="blue",
-    status=VehicleStatus.UNAVAILABLE,
-    daily_rate=50.0,
-    engine_capacity=1000,
-    type_of_vehicle=TypeOfVehicle.MOTORBIKE,
-)
-
-print(motorbike)
+        return f"{super().__str__()} Engine capacity: {self.engine_capacity}cc"
 
 
 @dataclass
@@ -82,19 +65,4 @@ class Truck(Vehicle):
     carrying_capacity: int
 
     def __str__(self):
-        return f"{super().__str__()} - Carrying capacity: {self.carrying_capacity}kg"
-
-
-truck = Truck(
-    vehicle_id=3,
-    max_speed=250,
-    model="Scania",
-    year=2022,
-    color="green",
-    status=VehicleStatus.RESERVED,
-    daily_rate=150.0,
-    carrying_capacity=2000,
-    type_of_vehicle=TypeOfVehicle.TRUCK,
-)
-
-print(truck)
+        return f"{super().__str__()} Carrying capacity: {self.carrying_capacity}kg"
