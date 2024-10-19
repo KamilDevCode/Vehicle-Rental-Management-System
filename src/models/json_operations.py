@@ -4,8 +4,9 @@ import json
 
 
 class JSONManager:
-    def __init__(self):
-        self.vehicle_db = VehicleDatabase()
+
+    # def __init__(self):
+    #     self.vehicle_db = VehicleDatabase()
 
     @staticmethod
     def save_to_json(data: list, filename: str):

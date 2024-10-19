@@ -1,36 +1,40 @@
 from datetime import datetime
 from src.models.vehicle import Vehicle, VehicleStatus
 from src.models.rental import RentalMode
-from src.models.vehicle_database import VehicleDatabase
+from src.models.json_operations import JSONManager
 
 
 class RentalService:
     @staticmethod
     def check_vehicle_validity():
-        vehicle_id = int(input("Enter vehicle ID to rent: "))
-        vehicle = VehicleDatabase().get_vehicle_by_id(vehicle_id)
-        if vehicle and vehicle.status == VehicleStatus.AVAILABLE:
-            return vehicle
-        print("Vehicle not available or invalid.")
-        return None
+        vehicle_id = int(input("Enter vehicle ID: "))
+        vehicle = JSONManager().load_from_json("vehicle_database.json")
+        for v in vehicle:
+            if v.vehicle_id == vehicle_id:
+                return v
+        else:
+            print("Vehicle not found.")
 
     @staticmethod
-    def check_user_age():
+    def check_user_age() -> int | str:
         age = int(input("Enter your age: "))
-        if age >= 18:
-            return age
-        else:
-            print("You must be at least 18 years old to rent a vehicle.")
-            return None
+        return (
+            age
+            if age >= 18
+            else print("You must be at least 18 years old to rent a vehicle.")
+        )
 
     @staticmethod
-    def check_user_driving_license():
-        license_valid = input("Do you have a valid driving license? (yes/no): ")
-        if license_valid.lower() == "yes":
-            return "valid"
+    def check_user_driving_license() -> bool:
+        licence_expiry_date = input(
+            "Enter your driving license expiry date (YYYY-MM-DD): "
+        )
+        expiry_date = datetime.strptime(licence_expiry_date, "%Y-%m-%d")
+        if expiry_date > datetime.now():
+            return True
         else:
-            print("You cannot rent a vehicle without a valid driving license.")
-            return None
+            print("Your driving license has expired. Please renew it.")
+            return False
 
     @staticmethod
     def choose_rental_mode():
@@ -43,7 +47,7 @@ class RentalService:
         return RentalMode(choice)
 
     @staticmethod
-    def calculate_price(rental):
+    def calculate_price(rental) -> float:
         days = (rental.end_date - rental.start_date).days
         price_calculation = {
             RentalMode.HOURLY: lambda: rental.vehicle.daily_rate * days * 0.2,
@@ -54,10 +58,8 @@ class RentalService:
         return price_calculation.get(rental.mode, lambda: 0)()
 
     @staticmethod
-    def make_reservation(
-        vehicle: Vehicle, start_date: datetime, end_date: datetime, client_name: str
-    ):
-        if vehicle.status == VehicleStatus.AVAILABLE:
-            vehicle.update_status(VehicleStatus.RESERVED)
-            return vehicle
-        return None
+    def make_reservation(rental):
+        rental.vehicle.update_status(VehicleStatus.RESERVED)
+        print(
+            f"Vehicle {rental.vehicle.vehicle_id} reserved for {rental.end_date - rental.start_date} days."
+        )

@@ -1,8 +1,9 @@
 from datetime import datetime
 from src.models.rental import Rental
-from src.models.vehicle import VehicleStatus, Vehicle
+from src.models.vehicle import VehicleStatus, Vehicle, TypeOfVehicle
 from src.models.vehicle_database import VehicleDatabase
 from src.services.rental_service import RentalService
+from src.models.json_operations import JSONManager
 
 
 class Menu:
@@ -19,6 +20,7 @@ class Menu:
             "7": self.show_unavailable_vehicles,
             "8": self.exit,
         }
+        self.file_manager = JSONManager()
 
     def run(self):
         while self.__is_running:
@@ -43,47 +45,54 @@ class Menu:
 
     def add_vehicle(self):
         print("=== Add New Vehicle ===")
-        model = input("Enter vehicle model: ")
+        brand = input("Enter vehicle model: ")
         year = int(input("Enter vehicle year: "))
         vehicle_id = int(input("Enter vehicle ID: "))
         max_speed = int(input("Enter max speed: "))
         color = input("Enter vehicle color: ")
         daily_rate = int(input("Enter daily rate: "))
-        # type_of_vehicle = input("Enter type of vehicle: ")
-        print(f"selected type of vehicle: ")
-        print("1.Car")
-        print("2.Truck")
-        print("3.Motorbike")
+        print("selected type of vehicle: \n1.Car\n2.Truck\n3.Motorbike")
 
-        type_choice = int(input("Enter your choice: "))
+        type_choice = input("Enter your choice: ")
 
-        choices = {1: "Car", 2: "Truck", 3: "Motorbike"}
-        type_of_vehicle = choices.get(type_choice, "Invalid choice")
+        vehicle_type = {
+            "1": TypeOfVehicle.CAR,
+            "2": TypeOfVehicle.TRUCK,
+            "3": TypeOfVehicle.MOTORBIKE,
+        }.get(type_choice, "Invalid vehicle type")
 
-        # Tworzenie nowego pojazdu
+        self.file_manager.save_to_json(
+            self.vehicle_db.vehicles, "vehicle_database.json"
+        )
+
+        if not vehicle_type:
+            print("Invalid vehicle type.")
+            return
+
         new_vehicle = Vehicle(
-            model=model,
+            brand=brand,
             year=year,
             vehicle_id=vehicle_id,
             status=VehicleStatus.AVAILABLE,
             max_speed=max_speed,
             color=color,
             daily_rate=daily_rate,
-            type_of_vehicle=type_of_vehicle,
+            type_of_vehicle=vehicle_type,
         )
 
-        # Dodawanie pojazdu do bazy
         self.vehicle_db.add_vehicle(new_vehicle)
-        print(f"Vehicle {model} added successfully.")
+        print(f"Vehicle {brand} added successfully.")
+        self.file_manager.save_to_json(
+            self.vehicle_db.vehicles, "vehicle_database.json"
+        )
 
     def rent_vehicle(self):
-        vehicle_id = int(input("Enter vehicle ID to rent: "))
-        # Zbieranie informacji o pojeździe
+
         vehicle = RentalService.check_vehicle_validity()
         if not vehicle:
-            print("Invalid vehicle selected. Exiting...")
+            print("Invalid vehicle selected.")
             return
-        # Zbieranie informacji o kliencie
+
         client_name = input("Enter client name: ")
         client_age = RentalService.check_user_age()
         if not client_age:
@@ -95,21 +104,18 @@ class Menu:
             print("Invalid driving license. Exiting...")
             return
 
-        # Zbieranie informacji o trybie wynajmu
         mode = RentalService.choose_rental_mode()
 
-        # Zbieranie dat rozpoczęcia i zakończenia wynajmu
         start_date_str = input("Enter start date (YYYY-MM-DD): ")
         end_date_str = input("Enter end date (YYYY-MM-DD): ")
 
         try:
-            # Konwersja dat na format datetime
+
             start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
         except ValueError:
             print("Invalid date format. Exiting...")
             return
-        vehicle = self.vehicle_db.get_vehicle_by_id(vehicle_id)
         if vehicle and vehicle.status == VehicleStatus.AVAILABLE:
             vehicle.update_status(VehicleStatus.RESERVED)
 
@@ -123,15 +129,14 @@ class Menu:
                 client_valid_driving_license=client_valid_driving_license,
             )
 
-            # Obliczenie całkowitej ceny wynajmu
             total_price = RentalService.calculate_price(rental)
             print(
-                f"Vehicle {vehicle_id} rented. Total price: {total_price} PLN. Enjoy your ride!"
+                f"Vehicle {vehicle} rented. Total price: {total_price:.2f} PLN. Enjoy your ride!"
             )
-            # Wyświetlanie szczegółów wynajmu
+
             print("\nRental Summary:")
             print(f"Client Name: {client_name}")
-            print(f"Vehicle: {vehicle.model}")
+            print(f"Vehicle: {vehicle}")
             print(f"Rental Mode: {mode.name}")
             print(f"Start Date: {start_date_str}")
             print(f"End Date: {end_date_str}")
@@ -139,7 +144,7 @@ class Menu:
 
             return rental
         else:
-            print(f"Vehicle with ID {vehicle_id} is not available.")
+            print(f"Vehicle: {vehicle} is not available.")
 
     def make_reservation(self):
         vehicle_id = int(input("Enter vehicle ID to make reservation: "))
@@ -147,6 +152,9 @@ class Menu:
         if vehicle and vehicle.status == VehicleStatus.AVAILABLE:
             vehicle.update_status(VehicleStatus.RESERVED)
             print(f"Vehicle {vehicle_id} reserved.")
+            self.file_manager.save_to_json(
+                self.vehicle_db.vehicles, "vehicle_database.json"
+            )
         else:
             print(f"Vehicle with ID {vehicle_id} is not available or not found.")
 
@@ -156,11 +164,17 @@ class Menu:
         if vehicle and vehicle.status == VehicleStatus.RESERVED:
             vehicle.update_status(VehicleStatus.AVAILABLE)
             print(f"Vehicle {vehicle_id} returned.")
+            self.file_manager.save_to_json(
+                self.vehicle_db.vehicles, "vehicle_database.json"
+            )
         else:
             print(f"Vehicle with ID {vehicle_id} is not reserved or not found.")
 
     def show_all_vehicles(self):
-        for vehicle in self.vehicle_db.vehicles:
+
+        loaded_data = self.file_manager.load_from_json("vehicle_database.json")
+
+        for vehicle in loaded_data:
             print(vehicle)
 
     def show_available_vehicles(self):
@@ -169,16 +183,12 @@ class Menu:
                 print(vehicle)
 
     def show_reserved_vehicles(self):
-        if not self.vehicle_db.vehicles:
-            print("No vehicles found.")
-            return
-        else:
-            for vehicle in self.vehicle_db.vehicles:
-                if vehicle.status == VehicleStatus.RESERVED:
-                    print(vehicle)
+        for vehicle in self.file_manager.load_from_json("vehicle_database.json"):
+            if vehicle.status == VehicleStatus.RESERVED:
+                print(vehicle)
 
     def show_unavailable_vehicles(self):
-        for vehicle in self.vehicle_db.vehicles:
+        for vehicle in self.file_manager.load_from_json("vehicle_database.json"):
             if vehicle.status == VehicleStatus.UNAVAILABLE:
                 print(vehicle)
 

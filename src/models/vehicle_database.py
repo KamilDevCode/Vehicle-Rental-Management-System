@@ -1,3 +1,4 @@
+import json
 from src.models.vehicle import Vehicle, VehicleStatus, TypeOfVehicle
 
 
@@ -7,7 +8,7 @@ class VehicleDatabase:
             Vehicle(
                 vehicle_id=1,
                 max_speed=180,
-                model="BMW",
+                brand="BMW",
                 year=2020,
                 color="Red",
                 status=VehicleStatus.AVAILABLE,
@@ -17,7 +18,7 @@ class VehicleDatabase:
             Vehicle(
                 vehicle_id=2,
                 max_speed=250,
-                model="Scania",
+                brand="Scania",
                 year=2022,
                 color="Green",
                 status=VehicleStatus.AVAILABLE,
@@ -27,7 +28,7 @@ class VehicleDatabase:
             Vehicle(
                 vehicle_id=3,
                 max_speed=200,
-                model="Yamaha",
+                brand="Yamaha",
                 year=2021,
                 color="Blue",
                 status=VehicleStatus.AVAILABLE,
@@ -36,11 +37,22 @@ class VehicleDatabase:
             ),
         ]
 
-    def get_vehicle_by_id(self, vehicle_id: int):
-        for vehicle in self.vehicles:
-            if vehicle.vehicle_id == vehicle_id:
-                return vehicle
-        return None
+    @staticmethod
+    def get_vehicle_by_id(vehicle_id: int):
+        json_data = json.load(open("vehicle_database.json"))
+        for vehicle in json_data:
+            if vehicle["vehicle_id"] == vehicle_id:
+                return Vehicle.from_dict(vehicle)
+
+    # @staticmethod
+    # def get_vehicle_by_id(vehicle_id: int):
+    #     # Wczytanie danych z pliku
+    #     json_data = JSONManager.load_from_json("vehicle_database.json")
+    #     for vehicle in json_data:
+    #         if vehicle.vehicle_id == vehicle_id:
+    #             return vehicle
+    #     return None
 
     def add_vehicle(self, vehicle: Vehicle):
         self.vehicles.append(vehicle)
+        return vehicle
