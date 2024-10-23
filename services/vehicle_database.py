@@ -1,5 +1,5 @@
 import json
-from src.models.vehicle import Vehicle, VehicleStatus, TypeOfVehicle
+from models.vehicles import Vehicle, VehicleStatus, TypeOfVehicle
 
 
 class VehicleDatabase:

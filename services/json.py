@@ -1,5 +1,4 @@
-from src.models.vehicle_database import VehicleDatabase
-from src.models.vehicle import Vehicle
+from models.vehicles import Vehicle
 import json
 
 

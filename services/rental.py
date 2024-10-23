@@ -1,19 +1,27 @@
 from datetime import datetime
-from src.models.vehicle import Vehicle, VehicleStatus
-from src.models.rental import RentalMode
-from src.models.json_operations import JSONManager
+from models import VehicleStatus
+from models.rental import RentalMode
+from database import crud
+
+# from src.models.json_operations import JSONManager
+from services.vehicle_database import VehicleDatabase
+from database.manager import Session
 
 
 class RentalService:
     @staticmethod
-    def check_vehicle_validity():
-        vehicle_id = int(input("Enter vehicle ID: "))
-        vehicle = JSONManager().load_from_json("vehicle_database.json")
-        for v in vehicle:
-            if v.vehicle_id == vehicle_id:
-                return v
-        else:
-            print("Vehicle not found.")
+    def check_vehicle_validity(vehicle_id: int):
+        with Session() as session:
+            vehicle = crud.get_vehicle_by_id(vehicle_id)
+        return vehicle
+
+        # vehicle_id = int(input("Enter vehicle ID: "))
+        # vehicle = JSONManager().load_from_json("vehicle_database.json")
+        # for v in vehicle:
+        #     if v.vehicle_id == vehicle_id:
+        #         return v
+        # else:
+        #     print("Vehicle not found.")
 
     @staticmethod
     def check_user_age() -> int | str:
@@ -37,7 +45,7 @@ class RentalService:
             return False
 
     @staticmethod
-    def choose_rental_mode():
+    def choose_rental_mode() -> RentalMode:
         print("Choose rental mode:")
         print("1. Hourly")
         print("2. Daily")
@@ -60,6 +68,9 @@ class RentalService:
     @staticmethod
     def make_reservation(rental):
         rental.vehicle.update_status(VehicleStatus.RESERVED)
+        VehicleDatabase.update_vehicle_status(
+            rental.vehicle.vehicle_id, rental.vehicle.status
+        )
         print(
             f"Vehicle {rental.vehicle.vehicle_id} reserved for {rental.end_date - rental.start_date} days."
         )

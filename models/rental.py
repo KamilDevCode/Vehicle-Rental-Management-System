@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from src.models.vehicle import Vehicle
+from models.vehicles import Vehicle
 from datetime import datetime
 from enum import Enum
 

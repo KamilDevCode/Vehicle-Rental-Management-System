@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from src.models import Vehicle
+from models import Vehicle
 
 
 @dataclass
